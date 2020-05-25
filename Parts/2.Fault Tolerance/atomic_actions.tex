@@ -1,1 +1,79 @@
 \part{Atomic actions}
+\section{Learning goals}
+\begin{itemize}
+\item  A thorough understanding of the problems Atomic Actions are meant to solve and how these motivates the different aspects of Atomic Actions.
+\item Ability to use and implement Atomic Actions, including the mechanisms providing the start, side and end boundaries.
+\item Understanding the motivation for using Asynchronous Notification in Atomic Actions.
+\item A coarse knowledge of how the mechanisms for Asynchronous Notification in C/Posix, ADA and Java works.
+\end{itemize}
+
+\section{What are atomic actions}
+\subsection{Motivation for using atomic actions}
+The general usage of atomic cations is for when several groups of concurrent tasks need to be structured to allow for coordination of their activities. The \textbf{atomic action} is required for each group of tasks to execute their joint activity. It should be mentioned that a single task may also want to protect itself from interference from other tasks. Atomic actions can therefore be said to involve one or more tasks and be a method for structuring these tasks such that they can operate on different parts of a single task concurrently. 
+
+\subsection{Different ways to define atomic actions }
+\begin{enumerate}
+\item An action is atomic if the tasks performing it are not aware of the existence of any other active tasks, and no other active tasks is aware of the activity of the tasks during the time the tasks are performing the action. 
+\item An action is atomic if the tasks performing it do not communicate with other tasks while the action is being performed.
+\item An atomic action has tasks that cannot detect state change except those performed by themselves and they do not reveal their state changes until the action is complete.
+\item Atomic actions are by other tasks considered to be indivisible and instantaneous such that the effects on the system are as if they were interleaved as opposed to concurrent.  
+\end{enumerate}
+
+\subsection{Requirements for atomic actions}
+\begin{itemize}
+\item \textbf{Well-defined boundaries} - Each atomic action should have a \textit{start}, an \textit{end} and a \textit{side boundary}. Start boundary is the location in each task involved in the atomic action where the action is deemed to start. The end boundary is where it is deemed to end and the side boundary separates tasks involved with the atomic action from those not involved.
+\item \textbf{Indivisibility (isolation)} - an atomic action must not allow the exchange of any information between the tasks on each side of the side boundary. If two atomic actions share data trough a Resource Manager then the value is determined by strict sequencing. There is no implied \textit{synchronization} at the start of an atomic action, but tasks are not allowed to leave the atomic action until all tasks are willing and able to leave.
+\item \textbf{Nesting} - Atomic actions may be nested as long as they do not overlap with other atomic actions. In general only \textit{strict nesting} allowed where one is completely contained within the other.
+\item \textbf{Concurrency} - It should be possible to execute different atomic actions concurrently
+\end{itemize}
+
+\subsection{Standard Atomic Actions implementation}
+Transaction mentioned in last part is a good example of an atomic action.
+Start boundary:
+\begin{enumerate}
+\item Dynamic (call to e.g. \textit{startTransactionWithWork()}
+\end{enumerate}
+Side boundary:
+\begin{enumerate}
+\item Locking, no unlocking before safe state (end boundary).
+\end{enumerate}
+End boundary:
+\begin{enumerate}
+\item Vote counting (two-phase commit)
+\item Synchronization primitive barrier that no one can pas through before everyone has arrived.
+\end{enumerate}
+
+\section{Language-specific atomic action implementation}
+\todo{Fill out more here}
+Java:
+\begin{itemize}
+\item Synchronized methods, wait, notify / notifyAll
+\item Asynchronous exceptions
+\end{itemize}
+Ada:
+\begin{itemize}
+\item Protected objects
+\item Function procedures and entries with guards.
+\end{itemize}
+C/POSIX
+\begin{itemize}
+\item $pthread_cancel$
+\item setjmp and longjmp
+\end{itemize}
+
+\section{Asynchronous notification}
+Asynchronous notification is a bit like interrupts in hardware. To get a recoverable action we must be able to get the attention of a task involved in the action that an error has occurred in another task involved in the action. This is achieved with an asynchronous notification mechanism which most programming languages and operating systems support. As with exceptions, there are two basic models; \textbf{resumption} and \textbf{termination}. 
+
+\subsection{Resumption (event handling)}
+Behaves like a software interrupt. A task indicates which events it is willing to handle; when the event is signaled the task is interrupted and an event handler is executed. 
+
+\subsection{Termination model}
+Each task specifies a domain of execution during which it is prepared to receive  an asynchronous notification that will cause the domain to be terminated.
+
+\subsection{The user need for asynchronous notification}
+Fundamental need is to enable tasks to respond \textit{quickly} to a condition which has been detected by another task. There are several occasions where polling for events or waiting for the event to occur is inadequate:
+\begin{itemize}
+\item \textbf{Error recovery} - When groups of tasks undertake \textit{atomic actions}, an error detected in one task requires all other tasks to participate in the recovery. For example, a hardware fault may mean that the task will never finish so the task may never reach its polling point. Another example is if a timing fault occurs, which means that deadline of a task will not be reached. In both these examples, the task must be informed that an error has been detected and that it must undertake some error recovery as quickly as possible. \textit{This describes why asynchronous notification is important for atomic actions}. 
+\end{itemize}
+
+\todo{Go into how asynchronous notification implemented in the programming languages in the course}
