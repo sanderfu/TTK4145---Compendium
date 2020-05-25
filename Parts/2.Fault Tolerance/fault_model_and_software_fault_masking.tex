@@ -1,1 +1,73 @@
 \part{Fault model and software fault masking}
+\section{Learning goals}
+\begin{itemize}
+\item Understanding of the three cases in low level design for fault tolerance by redundancy: Storage, Computation and Communication.
+\item Understanding of the work method: \begin{enumerate}
+\item  Find error model
+\item Detect errors and merge failure modes (+ error injection for testing)
+\item Handling or masking with redundancy. Aiming for progression of failfast, reliable and available systems.
+\end{enumerate}
+\item Ability to implement (simple) Process-Pairs-like systems
+\end{itemize}
+
+\section{Case 1: Storage}
+Imagine an array of data. Assume unreliable read and write functions.
+\subsection{Failure modes}
+\textit{status read(addr,data)}
+\begin{itemize}
+\item Wrong data
+\item Old data
+\item Data from wrong address
+\item Fail
+\end{itemize}
+\textit{status write(addr,data)}
+\begin{itemize}
+\item Writes wrong data
+\item Writes to wrong address
+\item Does not write
+\item Fail
+\end{itemize}
+\subsection{Detection and merging error modes.}
+For detection write also address, checksum, versionID and statusBit telling if block is OK. The status bit can be used for injecting errors. To simplify we merge all error modes to one, and consider all as the \textit{Fail} error mode.
+
+\subsection{Redundancy}
+Many options here, some include
+\begin{itemize}
+\item More copies or hard-drives
+\item If read fails, write a safe state back to memory.
+\item A repair thread reads regularly to maintain data.
+\end{itemize}
+
+\section{Case 2: Messages}
+\subsection{Failure modes}
+\begin{itemize}
+\item Lost
+\item Delayed (too late or out of order)
+\item Corrupted
+\item Duplicated
+\item Wrong recipient
+\end{itemize}
+
+\subsection{Detection and merging error modes}
+For detection include SessionID, checksum, acknowledgements and sequence numbers. To simplify error modes all errors are considered as \textit{lost message}.
+
+\subsection{Handling with redundancy}
+Timeout and resend the message.
+
+\section{Case 3: Processes/calculations}
+\subsection{Failure modes}
+Process does not do the next correct side effect.
+
+\subsection{Detection and merging error modes}
+Failed acceptance test used for detection typically if uses dynamic redundancy. Should be mentioned that we typically structure code such that we do acceptance test and only execute side effect if it is successfully. To simplify we merge all error modes into a Panic/Stop error mode.
+
+\subsection{Handling with redundancy}
+\begin{itemize}
+\item \textbf{Checkpoint restart} - Writing state to storage after successful acceptance test. Yields error containment but requires good acceptance test.
+\item \textbf{Process pairs} - Two processes, primary and backup. Primary does work, sends "IAmAlive" and checkpoints to backup. Backup takes over if primary fails. Does not rely on a safe communication line because re-sending can be used to mask it out.
+\item \textbf{Persistent processes} - This is not really relevant for embedded systems because requires infrastructure for reliable storage, communication and calculations. It is a transactional, stateless infrastructure where all calculations are transactions and the processes are stateless.   
+\end{itemize}
+
+
+
+ 
