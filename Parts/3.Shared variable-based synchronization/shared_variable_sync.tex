@@ -1,1 +1,193 @@
 \part{Shared variable synchronization}
+\addcontentsline{toc}{chapter}{First unnumbered chapter}
+\setcounter{section}{0}
+\renewcommand*{\theHsection}{chX.\the\value{section}}
+\section{Learning goals}
+\begin{itemize}
+\item Ability to create (error free) multi thread programs with shared variable synchronization.
+\item Thorough understanding of pitfalls, patterns, and standard applications of shared variable synchronization
+\item Understanding of synchronization mechanisms in the context of the kernel/HW
+\item Ability to correctly use the synchronization mechanisms in POSIX, ADA (incl. knowledge of re-queue and entry families) and Java.
+
+\end{itemize}
+\section{Motivation}
+The major difficulties associated with concurrent programming arise from task interactions. For tasks to run concurrently they must synchronize and communicate. Synchronization can also be considered to be a content-less form of communication. 
+
+Inter-task communication based upon \textbf{shared variables} or \textbf{message passing}. In this part we will look at shared variable-based communication and synchronization primitives. In particular, we will get into \textit{busy waiting}, \textit{semaphores},\textit{conditional critical regions}, \textit{monitors}, \textit{protected types} and \textit{synchronized methods.} We will not discuss message-based synchronization.
+
+\section{Mutual exclusion and condition synchronization}
+A sequence of statements that must appear to be executed indivisibly is called a \textbf{critical section} and the synchronization required to protect a critical section is called \textbf{mutual exclusion}. Mutual exclusion is however not the only form of synchronization needed. If two tasks do not share any variables there is no need of mutual exclusion. \textbf{Conditional synchronization} is another form of synchronization where a task that wishes to perform an operation must wait until some other tasks finishes their operations first. 
+I.e. lets look at a \textbf{producer-consumer} system where a buffer links two tasks. If the buffer is finite we need two condition synchronizations, \textbf{Buffer full} to stop producer from depositing to a full buffer and \textbf{Buffer empty} to stop consumer from extracting form empty buffer. We must also have mutual exclusion naturally. There are many synchronization primitives to make these methods reality, where the basic one is \textbf{busy-wait} loops with \textbf{flags} (only works well for conditional synchronization).
+
+\section{Busy Waiting}
+Waiting loop, if flag not yet set loops round and rechecks the flag. This is very inefficient and wastes processor resources. An issue with busy waiting is that they can easily lead to \textbf{live locks}. This is an error condition where tasks get stuck in their busy-wait loops and are unable to make progress. The key takeaway with synchronizing only with mutual exclusion and busy waiting cam be summarized as
+\begin{itemize}
+\item Protocols that use busy loops are difficult to design, understand and prove correct
+\item Testing programs may not examine rare interleavings
+\item Inefficiency
+\item An unreliable (rouge) task that misuses shared variables will corrupt the entire system.
+\end{itemize}
+
+\section{Suspend and resume}
+Alternative to busy waiting that does not waste as much processor time. Strategy here is to suspend waiting tasks until they can proceed. One-stage suspend and resume unfortunately suffers from \textbf{data race condition}. Consider the case of two threads T1 and T2 and a flag.  Assume we start with the flag down and that T1 runs and checks the flag before the OS preempts T1 and runs T2. T2 sets the flag and resumes T1. T1 is not suspended so the resume has no effect. When T1 next runs it thinks the flag is down, because it evaluated it before it was preempted and therefore suspends itself all though the flag is actually up. It will never be resumed again
+
+There are several ways to prevent data race conditions, they all have some \textbf{two-stage suspend} operation where a thread or process mus announce that it plans to suspend in the near future before actually doing so. Note that although suspend and resume are useful low-level primitives, no operating system or language relies solely on these mechanisms for mutual exclusion and condition synchronization. 
+
+\section{Semaphores}
+Semaphores are a simple mechanism for programming mutual exclusion and condition synchronization. Originally designed by Dijkstra (1968) they have the following two benefits:
+\begin{enumerate}
+\item They simplify the protocols for synchronization
+\item They remove the need for busy-wait loops
+\end{enumerate}
+\textbf{Definition:} A semaphore is a non-negative integer variable that apart from initialization can only be acted upon by two procedures. These procedures are \textit{wait} and \textit{signal} in this course.
+\begin{enumerate}
+\item wait(S) - If the value of the semaphore S is greater than zero then decrements its value by one and continues to next line; otherwise delay the task until S is greater than zero and then decrements its value and continue.
+\item Signal(S) - Increment the value of the semaphore S by unity.
+\end{enumerate}
+General semaphores often called \textbf{counting semaphores}. Important to note that wait and signal are atomic actions.
+
+\subsection{Suspended tasks}
+All synchronization primitives deal with delay by some form of suspension; the task is removed from the set of executable tasks. When a task is asked to wait on a zero semaphore, the run-time support system (RTSS) removes the task from the processor and places it in a queue of suspended tasks on that particular semaphore. We should assume that this queue is in non-deterministic order if we are not actively scheduling tasks. 
+
+\subsection{Implementation}
+RTSS scheduler programmed so that it does not swap out a task during wait or signal operation; they are \textbf{non-preemptible operations}. The RTSS will also typically disable interrupts during the operations too if single processor. For a multiprocessor system if two processes both use wait or signal on same semaphore, the RTSS cannot do anything about it and thus a \textit{lock} mechanism must be used on the semaphore. It should be noted that semaphores can only provide mutual exclusion if memory locations exhibits the essence of mutual exclusion. 
+
+\subsection{Liveness provision}
+The synchronization primitives introduces error conditions. \textbf{Deadlock} is the most serious. Similar to livelock, but tasks are suspended. It is in the nature of an interdependent concurrent program that usually once a subset of the tasks become deadlocked, all the other tasks will eventually become part of the deadlocked set. A less severe error condition is \textbf{indefinite postponement (starvation/lockout)}. Task tries to gain access to resource but is never allowed due to other tasks taking it. \textit{If a task is free from livelocks, deadlocks and indefinite postponement then it is said to possess \textbf{liveness}}.
+
+\subsection{Criticism of semaphores}
+A real-time program built only upon semaphores is error-prone. Needs just one occurrence of a semaphore to be omitted or misplaced for the entire program to collapse at runtime. We need a more structured synchronization primitive.
+
+\section{Monitors}
+The main problem with conditional critical regions is that they can be dispersed throughout the program. \textbf{Monitors} are intended to alleviate this problem by providing more structured control regions. The intended critical regions are written as procedures and encapsulated together into a single module called a monitor. As a module, all variables that must be accessed under mutual exclusion are hidden and additionally all procedure calls into the module are guaranteed to execute with mutual exclusion. Although providing mutual exclusion, there is still need for condition synchronization within the monitor. We have \textbf{condition variable} within the monitor with \textit{wait} and \textit{signal} functions. To prevent two or more tasks to become active at the same time within the monitor, four different approaches are suggested
+\begin{enumerate}
+\item A signal is allowed only as the last action of a task before it leaves the monitor.
+\item A signal operation has the side-effect of executing a return statement.
+\item A signal operation which unblocks another taks has the effect of blocking itself.
+\item A signal operation which unblocks another task does not block and the freed task must compete for access to the monitor once the signalling task exits.
+\end{enumerate}
+
+\subsection{Criticism of monitors}
+The monitor gives a structured and elegant solution to mutual exclusion problems such as the bounded buffer. It does not however, deal well with condition synchronizations, resorting to low-level semaphore-like primitives. 
+
+\section{Synchronization mechanisms in POSIX, Java and Ada}
+\subsection{Java}
+The synchronized keyword is used to make methods thread-safe. Consider the following class
+\begin{minted}{java}
+public class MyClass {
+	private int i;
+   
+    public MyClass(int initValue) {
+       i = initValue;
+    }
+   
+    public synchronized void increment() {
+        i++;
+    }
+}
+\end{minted}
+When a thread T1 executes increment, all other threads that use synchronized methods (functions) of the same class object suspend until thread T1 releases the monitor lock. Note that we must make the split between synchronized methods and other methods in the class. Only synchronized methods require a thread to gain access of the class object mutex. If the method we try to use is not synchronized it can be accessed without having the mutex. Hence \textit{to obtain full mutual exclusion, every method has to be labeled synchronized}. 
+\textit{Wait()} is used to suspend the current thread, like this for example
+\begin{minted}{java}
+public synchronized void conditionalIncrement(){
+    while(i < 3) wait();
+    i++
+ }   
+\end{minted}
+since conditionalIncrement() is a synchronized method, thread T1 must hold the monitor lock (mutex) before it can invoke it. When it calls wait(), it releases the lock and suspends execution. Some time later it will be woken up again when it is \textit{notified}
+\begin{minted}{java}
+public synchronized void importantChange() {
+   i = 3;
+   notifyAll();
+}
+\end{minted}
+All suspended threads waiting on the lock are notified when notifyAll() is called. notifyAll() wakes up all threads wakes up all suspended threads, but it does not release the lock and all awoken threads must compete for it when it is released.
+
+\subsection{Ada}
+\textit{Protected objects} are data types protected from inappropriate simultaneous access by multiple tasks. Protected objects are like monitors, they provide the structuring facility of monitors with the high-level synchronization mechanism of conditional critical regions. They are split into an interface definition and a operation implementation
+\begin{minted}{ada}
+protected type Counting_Semaphore is
+    procedure Release;
+    entry Acquire;
+    function Lock_Count return Natural;
+private
+	Count : Natural := 0; --Natural number, i.e. geq 0
+end Counting_Semaphore;
+
+
+protected body Counting_Semaphore is
+    procedure Release is
+    begin
+        if Count > 0 then
+            Count := Count - 1;
+        end if;
+    end Release;
+    
+    entry Acquire when Count < 11 is
+    begin
+        Count := Count + 1;
+    end Acquire
+    
+    function Lock_Count return Natural is
+    begin
+        return Count;
+    end Lock_Count;
+end Counting_Semaphore;
+\end{minted}
+Take note of the following important aspects in Ada:
+\begin{itemize}
+\item Procedures can modify the state, and protected procedures guarantee mutual exclusion
+\item Entries are similar, but they have a boundary condition that must be true before they can execute. By using protected entry we can achieve condition synchronization.
+\item Functions cannot change the state in protected body, only read it. They can therefore have concurrent access, not mutually exclusive even though in protected body.
+\end{itemize}
+The \textit{requeue} keyword is used in an entry body to delay the execution of certain statements in the body. The effect of a requeue statement is to remove a task that is executing in an entry and place it on a different queue. In the example below we place the task $My\_Entry$ on the $Wait\_For\_Data$ queue if Data is not available.
+
+\begin{minted}{ada}
+entry My_Entry when My_Cond = True is
+begin
+    if Data_Available then
+        Do_Work;
+    else
+        requeue Wait_For_Data;
+    end if;
+end My_Entry;
+\end{minted}
+
+\subsection{C/POSIX}
+Example useage of pthread with mutexes:
+\begin{minted}{C}
+int i = 0;
+pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+
+void increment() {
+    for (int j = 0; j < 100000; j++) {
+        pthread_mutex_lock(&mutex);
+        i++;
+        pthread_mutex_unlock(&mutex);
+    }
+    return NULL;
+}
+
+void decrement() {
+    for (int j = 0; j < 100000; j++) {
+        pthread_mutex_lock(&mutex);
+        i--;
+        pthread_mutex_unlock(&mutex);
+    }
+    return NULL;
+}
+
+int main() {
+    pthread_t A;
+    pthread_t B;
+    
+    pthread_create(&A, NULL,increment, NULL);
+    pthread_create(&B, NULL,decrement,NULL);
+    
+    pthread_join(A, NULL);
+    pthread_join(B, NULL);
+    
+    printf("i = %d\n", i);
+    return 0;
+}
+\end{minted}
