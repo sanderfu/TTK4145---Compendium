@@ -1,1 +1,251 @@
 \part{Software quality}
+Ultimate SW quality metric: \textbf{maintainability}. \textbf{Readability}, among other things, is also important.
+\section{Learning Goals}
+\begin{itemize}
+\item Be able to write software following selected Code Complete Checklists for modules, functions, variables and comments
+\item Be able to criticize program code based on the same checklists
+
+\end{itemize}
+
+\section{Modules/Classes checklist}
+\subsection{Abstraction}
+\begin{itemize}
+\item Does the class have a central purpose?
+\item Is the class well-named?
+\item Does the class's interface present a consistent abstraction?
+\item Does the class's interface make obvious how you should use the class?
+\item Is the class's interface abstract enough that you can treat it like a black box?
+\item Are the class's services complete enough? 
+\item Has unrelated information been moved out of the class? 
+\item Have you thought about subdividing the class into component classes, and have you subdivided it as much as you can?
+\item Are you preserving the integrity of the class’s interface as you modify the class?
+\end{itemize}
+
+\subsection{Encapsulation}
+\begin{itemize}
+\item Does the class minimize accessibility to its members?
+\item Does the class avoid exposing member data?
+\item Does the class hide its implementation details from other classes as much as the programming language permits?
+\item Dos the class avoid making assumptions about its users, including its derived classes?
+\item Is the class independent of other classes? Is it loosely coupled?
+\end{itemize}
+
+\subsection{Inheritance}
+\begin{itemize}
+\item Is inheritance used only to model "is a" relationships?
+\item Does the class documentation describe the inheritance strategy?
+\item Do derived classes avoid “overriding” non-overridable routines? 
+\item Are common interfaces, data, and behavior as high as possible in the inheritance tree? 
+\item Are inheritance trees fairly shallow? 
+\item Are all data members in the base class private rather than protected? 
+\end{itemize}
+
+\subsection{Other Implementation Issues}
+\begin{itemize}
+\item Does the class contain about \textbf{Seven data members or fewer}?
+\item Does the class minimize direct and indirect routine calls to other classes?
+\item Does the class collaborate with other classes only to the extent absolutely necessary? 
+\item Is all member data initialized in the constructor? 
+\item Is the class designed to be used as deep copies rather than shallow copies unless there’s a measured reason to create shallow copies? 
+\end{itemize}
+
+\newpage
+\section{High-Quality Routines checklist}
+Key points
+\begin{itemize}
+\item Most important reason for creating routines is to improve readability, reliability and modifiability.
+\item A routine name is indication of its quality.
+\end{itemize}
+\subsection{Big-Picture Issues}
+\begin{itemize}
+\item Is the reason for creating the routine sufficient?
+\item Have all parts of the routine that would benefit form being put into routines of their own been put into routines of their own?
+\item Is the routine's name a strong, clear verb-plus-object name for a procedure or a description of the return value for a function?
+\item Does the routine's name describe everything the routine does?
+\item Have you established naming conventions for common operations?
+\item Does the routine have strong, functional cohesion - doing one and only one thing?
+\item Does the routine have loose coupling - are the routine's connections to other routines small, intimate, visible and flexible?
+\item Is the length of the routine determined naturally by its function and logic, rather than by artificial coding standard?
+\end{itemize}
+\subsection{Parameter-Passing Issues}
+\begin{itemize}
+\item Does the routine's parameter list, taken as a whole, present a consistent interface abstraction? 
+\item Are the routine's parameters in a sensible order, including matching the order of parameters in similar routines?
+\item Are interface assumptions documented?
+\item Does the routine have \textbf{seven or fewer} parameters?
+\item Is each input parameter used?
+\item Is each output parameter used?
+\item Does the routine avoid using input parameters as working variables? 
+\item If the routine is a function, does it return a valid value under all possible circumstances?
+\end{itemize}
+
+\newpage
+\section{Naming variables checklist}
+\subsection{General naming considerations}
+\begin{itemize}
+\item Does the name fully and accurately describe what the variable represents?
+\item Does the name refer to the real-world problem rather than to the programming-language solution?
+\item Is the name long enough that you don’t have to puzzle it out?
+\item Are computed-value qualifiers, if any, at the end of the name? \begin{itemize}
+\item Qualifiers are: Total, sum, Average, Max, Min, Record, String, Pointer etc. 
+\end{itemize}
+\item Does the name use Count or Index instead of Num?
+\end{itemize}
+
+\subsection{Naming specific kinds of data}
+\begin{itemize}
+\item Are loop index names meaningful (something other than i, j, or k if the loop is more than one or two lines long or is nested)?
+\item Have all “temporary” variables been renamed to something more meaningful?
+\item Are Boolean variables named so that their meanings when they’re true are clear?
+\item Do enumerated-type names include a prefix or suffix that indicates the category— for example, $Color\_ $ for $Color\_Red$, $Color\_Green$, $Color\_Blue$, and so on?
+\item Are named constants named for the abstract entities they represent rather than the numbers they refer to?
+\end{itemize}
+
+\subsection{Naming conventions}
+\begin{itemize}
+\item Does the convention distinguish among local, class, and global data?
+\item Does the convention distinguish among type names, named constants, enumerated types, and variables?
+\item Does the convention identify input-only parameters to routines in languages that don’t enforce them?
+\item Is the convention as compatible as possible with standard conventions for the language?
+\item Are names formatted for readability?
+\end{itemize}
+
+\subsection{Short names}
+\begin{itemize}
+\item Does the code use long names (unless it’s necessary to use short ones)?
+\item Does the code avoid abbreviations that save only one character?
+\item Are all words abbreviated consistently?
+\item Are the names pronounceable?
+\item Are names that could be misread or mispronounced avoided?
+\item Are short names documented in translation tables?
+\end{itemize}
+
+\subsection{Common Naming Problems: Have you avoided...}
+\begin{itemize}
+\item ...names that are misleading?
+\item ...names with similar meanings?
+\item ...names that are different by only one or two characters?
+\item ...names that sound similar?
+\item ...names that use numerals?
+\item ...names intentionally misspelled to make them shorter?
+\item ...names that are commonly misspelled in English?
+\item ...names that conflict with standard library routine names or with predefined variable names?
+\item ...totally arbitrary names?
+\item ...hard-to-read characters?
+\end{itemize}
+
+\newpage
+\section{Self-Documenting Code Checklist}
+\subsection{Classes}
+\begin{itemize}
+\item Does the class’s interface present a consistent abstraction?
+\item Is the class well named, and does its name describe its central purpose? 
+\item Does the class’s interface make obvious how you should use the class? 
+\item Is the class’s interface abstract enough that you don’t have to think about how its services are implemented? Can you treat the class as a black box?
+\end{itemize}
+
+\subsection{Routines}
+\begin{itemize}
+\item Does each routine’s name describe exactly what the routine does?
+\item Does each routine perform one well-defined task?
+\item Have all parts of each routine that would benefit from being put into their own routines been put into their own routines?
+\item Is each routine’s interface obvious and clear?
+\end{itemize}
+
+\subsection{Data Names}
+\begin{itemize}
+\item Are type names descriptive enough to help document data declarations?
+\item Are variables named well?
+\item Are variables used only for the purpose for which they’re named?
+\item Are loop counters given more informative names than i, j, and k?
+\item Are well-named enumerated types used instead of makeshift flags or Boolean variables?
+\item Are named constants used instead of magic numbers or magic strings?
+\item Do naming conventions distinguish among type names, enumerated types, named constants, local variables, class variables, and global variables?
+\end{itemize}
+
+\subsection{Data Organization}
+\begin{itemize}
+\item Are extra variables used for clarity when needed?
+\item Are references to variables close together?
+\item Are data types simple so that they minimize complexity?
+\item Is complicated data accessed through abstract access routines (abstract data types)?
+\end{itemize}
+
+\subsection{Control}
+\begin{itemize}
+\item Is the nominal path through the code clear?
+\item Are related statements grouped together?
+\item Have relatively independent groups of statements been packaged into their own routines?
+\item Does the normal case follow the if rather than the else?
+\item Are control structures simple so that they minimize complexity?
+\item Does each loop perform one and only one function, as a well-defined routine would?
+\item Is nesting minimized?
+\item Have Boolean expressions been simplified by using additional Boolean variables, Boolean functions, and decision tables?
+\end{itemize}
+
+\subsection{Layout}
+\begin{itemize}
+\item Does the program’s layout show its logical structure?
+\end{itemize}
+
+\subsection{Design}
+\begin{itemize}
+\item Is the code straightforward, and does it avoid cleverness?
+\item Are implementation details hidden as much as possible?
+\item Is the program written in terms of the problem domain as much as possible rather than in terms of computer-science or programming-language structures?
+\end{itemize}
+
+\newpage
+\section{Good Commenting Technique Checklist}
+\subsection{General}
+\begin{itemize}
+\item Can someone pick up the code and immediately start to understand it?
+\item Do comments explain the code’s intent or summarize what the code does, rather than just repeating the code?
+\item Is the Pseudocode Programming Process used to reduce commenting time?
+\item Has tricky code been rewritten rather than commented?
+\item Are comments up to date?
+\item Are comments clear and correct?
+\item Does the commenting style allow comments to be easily modified?
+\end{itemize}
+\subsection{Statements and Paragraphs}
+\begin{itemize}
+\item Does the code avoid endline comments?
+\item Do comments focus on why rather than how?
+\item Do comments prepare the reader for the code to follow?
+\item Does every comment count? Have redundant, extraneous, and self-indulgent comments been removed or improved?
+\item Are surprises documented?
+\item Have abbreviations been avoided?
+\item Is the distinction between major and minor comments clear?
+\item Is code that works around an error or undocumented feature commented?
+\end{itemize}
+
+\subsection{Data Declarations}
+\begin{itemize}
+\item Are units on data declarations commented?
+\item Are the ranges of values on numeric data commented?
+\item Are coded meanings commented?
+\item Are limitations on input data commented?
+\item Are flags documented to the bit level?
+\item Has each global variable been commented where it is declared?
+\item Has each global variable been identified as such at each usage, by a naming convention, a comment, or both?
+\item Are magic numbers replaced with named constants or variables rather than just documented?
+\item 
+\end{itemize}
+\subsection{Control Structures}
+\begin{itemize}
+\item Is each control statement commented?
+\item Are the ends of long or complex control structures commented or, when possible, simplified so that they don’t need comments?
+\end{itemize}
+
+\subsection{Routines}
+\begin{itemize}
+\item Is the purpose of each routine commented?
+\item Are other facts about each routine given in comments, when relevant,including input and output data, interface assumptions, limitations, error corrections, global effects, and sources of algorithms?
+\end{itemize}
+
+\subsection{Files, Classes and Programs}
+\begin{itemize}
+\item Does the program have a short document, such as that described in the Book Paradigm, that gives an overall view of how the program is organized?
+\item Is the purpose of each file described?
+\item Are the author’s name, e-mail address, and phone number in the listing?
+\end{itemize}

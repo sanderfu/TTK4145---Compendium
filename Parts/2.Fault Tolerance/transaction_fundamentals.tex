@@ -116,7 +116,7 @@ Useful if there are multiple participants
 Queues logrecords, optimizes disk access and sends acknowledgments receipts on received log records.
 
 \subsection{Checkpoints}
-Discussed before, alternative to log method described above. Stores a consistent state that we can start the system in.
+\textit{Not the recovery points discussed before}, checkpoints are a smart way to stop the log from growing infinitely large. Once in a while a complete state, including a list of all active transactions is written to the log. This is a checkpoint. We can then delete log entries older than this checkpoint.
 
 \section{Other terms}
 \subsection{Optimistic concurrency control:}
