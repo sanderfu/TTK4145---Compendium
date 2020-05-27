@@ -8,6 +8,7 @@ Ultimate SW quality metric: \textbf{maintainability}. \textbf{Readability}, amon
 \end{itemize}
 
 \section{Modules/Classes checklist}
+A module is a function, a file, an object, package, library or other collection of code. Remember that building supermodules from submodules provides scalability. 
 \subsection{Abstraction}
 \begin{itemize}
 \item Does the class have a central purpose?
@@ -49,13 +50,15 @@ Ultimate SW quality metric: \textbf{maintainability}. \textbf{Readability}, amon
 \item Is the class designed to be used as deep copies rather than shallow copies unless there’s a measured reason to create shallow copies? 
 \end{itemize}
 
+\subsection{Key points}
+\begin{itemize}
+\item Class interfaces should provide a consistent abstraction. An abstraction is the ability to view a complex operation in a simplified form. A module interface provides an abstraction of the implementation that is hidden behind it.
+\item Modules are the primary tool to manage complexity.
+\item Think about abstraction also internally in the module.
+\end{itemize}
+
 \newpage
 \section{High-Quality Routines checklist}
-Key points
-\begin{itemize}
-\item Most important reason for creating routines is to improve readability, reliability and modifiability.
-\item A routine name is indication of its quality.
-\end{itemize}
 \subsection{Big-Picture Issues}
 \begin{itemize}
 \item Is the reason for creating the routine sufficient?
@@ -132,6 +135,14 @@ Key points
 \item ...names that conflict with standard library routine names or with predefined variable names?
 \item ...totally arbitrary names?
 \item ...hard-to-read characters?
+\end{itemize}
+
+\subsection{Key Points}
+
+\begin{itemize}
+\item Most important reason for creating routines is to improve readability, reliability and modifiability.
+\item A routine name is indication of its quality.
+\item Functions should only be used when the primary purpose of the function is to return a specific value described my the functions name.
 \end{itemize}
 
 \newpage
