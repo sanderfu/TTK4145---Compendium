@@ -69,3 +69,32 @@ int designatedElevator[N_FLOORS][2];
 \item The abstraction is not consistent. The name indicates that the module calculates and manages cost but at the same time it manipulates cost arrays, finds best elevator and designates elevators too? This abstraction has low cohesion, it is not consistent.
 \item The data members are not encapsulated.
 \end{itemize}
+
+\newpage
+\section{Message-based Resource Managers}
+\subsection{Go example}
+\begin{minted}{go}
+func resourceManager(clients chan message, transactionManager chan message)
+myTmChannel = make(message);
+for {
+	select {
+		case message <- clients :
+			switch message.request
+		case "dowork1":
+			transactionManager <- myId, "joinTransaction", tid, myTmChannel;
+			// store recoverypoint (if not maintaining log)
+			// Do work of type 1 using requestData, keep track of errorstatus
+			replyChannel <- result;
+		case "dowork2":
+			// ...
+		case message <- myTmChannel
+			switch message.request
+				case "prepareToCommit":
+					transactionManager <- transactions[tid].errorStatus;
+				case "commit":
+					// Delete recoverypoint, unlock any locks, delete transaction item from mapping
+				case "abort"
+					// reset to recoverypoint, unlock any locks. delete transaction item from mapping
+	}
+}
+\end{minted}

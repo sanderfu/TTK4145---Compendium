@@ -1,5 +1,5 @@
 \part{Transaction fundamentals}
-\textit{Disclaimer: This part is not very good pedagogically. It is unclear what the context is for the terminology and methodology used. It seems to be based around JAVA infrastructure or something. The notes I have therefore are unable to give any decent intuition and are more used as a high-level explanatory thingy for when questions regarding this appears on exams.}
+Transaction fundamentals is fault tolerance with more participants (threads, processes, servers etc.)
 
 \section{Learning Goals}
 \begin{itemize}
@@ -76,8 +76,13 @@ Commit/Completion phase
 Note that: A disadvantage with two-phase commits is that the protocol is blocking. Participants will block after they have voted, awaiting a commit or rollback
 message. If the coordinator fails, they will never receive either.
 
+Note also that: Side effect on the outside world generally cannot be aborted. Should therefore keep such effects outside of the transaction framework and wait until commit to do the action. 
+
 \subsection{Locking}
-Ensures that intermediate states are not propagated. Additionally, ensures that participants can only communicate with other participants. The participant must be part of the ongoing transaction to be able to use the locked resource. 
+Ensures that intermediate states are not propagated (error containment). Additionally, ensures that participants can only communicate with other participants (atomicity). The participant must be part of the ongoing transaction to be able to use the locked resource.
+
+\subsection{Two-phase commit (the vote)}
+Gives us End Boundary, coordinates acceptance tests to avoid the domino effect. First \texttt{prepareToCommit()} and then either \texttt{commit()} or \texttt{abort()}.
 
 \subsection{Lock Manager}
 Can have the following functionality:
@@ -90,7 +95,7 @@ Can have the following functionality:
 Can also have other functions relating to locks.
 
 \subsection{Resource Manager}
-The resource managers are the \textit{transaction participants}. 
+The resource managers are the \textit{transaction participants}. This is in other words the modules in a transaction framework.
 \begin{itemize}
 \item Keeps track of locks and recovery points
 \item Communicates with transaction manager during voting and commit phases.
@@ -101,15 +106,20 @@ Useful if there are multiple participants
 \begin{itemize}
 \item Creates the transaction, keeps track of participants
 \item Plays the role of coordinator
-\item Can provide a transaction deadline and abort if the deadline is missed.
+\item Can provide a transaction deadline and abort if the deadline is missed. This is useful of gets Deadlocks, starvation and/or timing problems.
 \end{itemize}
 
 \subsection{The log}
+Useful for restart, handles large states and parallell actions.
 \begin{itemize}
-\item Alternative to checkpoints
 \item Every participant including the TM writes every planned change of state to the log and waits until the operation is confirmed safe to perform it. 
 \item Processes can restore state after restart by executing the logrecords.
-\item Logrecords can be executed backwards to undo actions, therefore no need for checkpoints.
+\item Logrecords can be executed backwards to undo actions, therefore no need for recovery points in principle. 
+\end{itemize}
+Failure recovery
+\begin{itemize}
+\item \textbf{RM fails} - read log as usual, ask TM about the ones with unknown status
+\item \textbf{TM fails} - read log as usual, all transactions active gets aborted.
 \end{itemize}
 
 \subsection{The Log manager}
@@ -120,7 +130,7 @@ Queues logrecords, optimizes disk access and sends acknowledgments receipts on r
 
 \section{Other terms}
 \subsection{Optimistic concurrency control:}
-This method assumes that multiple transactions can frequently complete without interfering with each other. While running, transactions use resources without utilizing locks or other synchronization primitives. This works because before committing, each transaction verifies that no other transaction has modified the data it has read. If conflicting modifications are revealed, the transaction is rolled back and restarted. OCC can work well when we have low data contention, meaning when conflicts are rare
+This method assumes that multiple transactions can frequently complete without interfering with each other. While running, transactions use resources without utilizing locks or other synchronization primitives. This works because before committing, each transaction verifies that no other transaction has modified the data it has read. If conflicting modifications are revealed, the transaction is rolled back and restarted. OCC can work well when we have low data contention, meaning when conflicts are rare. IS an alternative to locking in these cases.
 
 \subsection{Two-phase commit optimizations}
 Different methods exist here
@@ -135,4 +145,14 @@ Different methods exist here
 What if we give our vote and then loose connection? We have to make local guess and maybe to forward error recovery after.
 
 \subsection{Interposition}
-The TM's ability to play the role of a RM.
+The TM's ability to play the role of a RM. Nested server-modules. A great way of dividing a system into modules.
+
+\section{Summary }
+What we have gone through here is a philosophy, a way to think about error handling and consistency in distributed systems. In the case of Real-Time systems, where we do not have the infrastructure, the challenge is to adapt this to our use. Some cases we can use this philosophy for include
+\begin{itemize}
+\item \textbf{High availability} - We want redundancy in calculating power - one computer should be ready to take over for the other if it is restarted.
+\item \textbf{Scalability and load balancing} - We should be able to put extra resources in at bottlenecks.
+\item \textbf{Online upgrade} - We need to be able to upgrade the system without loosing availability.
+\item \textbf{Consistency} - We need to ensure a consistent total system after a subsystem restarts.
+
+\end{itemize}

@@ -69,6 +69,10 @@ C/POSIX
 \end{itemize}
 
 \section{Asynchronous notification}
+\subsection{Recap of where we are up until now}
+We have software structure that enables multi-thread error handling and voting at the end of an atomic action (transaction) that facilitates backwards error recovery. Backwards error recovery is simple and versatile, but not always good enough. We basically wait for all tasks to finish after an error has occurred. The work they do in this time can be meaningless if the task that is erroneous was essential for the total work the tasks were doing. We need a mechanism for distribution of error information to achieve atomic actions with forward error recovery (not transaction). 
+
+\subsection{Intro to asynchronous notification}
 Asynchronous notification is a bit like interrupts in hardware. It is a way to distribute error information instead of using the commit structure discussed or some polling regime to make forward error recovery possible instead of just backward error recovery. To get a recoverable action we must be able to get the attention of a task involved in the action that an error has occurred in another task involved in the action. This is achieved with an asynchronous notification mechanism which most programming languages and operating systems support. As with exceptions, there are two basic models; \textbf{resumption} and \textbf{termination}. 
 
 \subsection{Resumption (event handling)}
@@ -117,7 +121,7 @@ int main() {
     return 0;
 }
 \end{verbatim}
-When program above executed it will return "second main"
+When program above executed it will return "second main".
 
 \subsubsection{Asynchronous notification in Ada}
 The asynchronous notification facilities in Ada allow an application to respond to among other things asynchronous transfer of control (ATC) requests on a task - supporting a termination model. There is no generalized model for resumption in Ada. To emphasize that ATC is a form of communication and synchronization, the mechanism  is built on top of the inter-task communication facility.
@@ -175,6 +179,11 @@ ATC here also. Focus on Real-Time Java.
 \begin{itemize}
 \item Built on Java exceptions
 \item Can be blocked
+\end{itemize}
+
+\subsection{Criticism of Asynchronous Transfer of Control (ATC) }
+\begin{itemize}
+\item Leaves us in an undefined state. On the other hand we get full control over changed state and in our framework we have a lock manager that can unlock on behalf of killed thread so that we can get a consistent state again.
 \end{itemize}
 
 
