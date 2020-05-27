@@ -1,0 +1,285 @@
+\addcontentsline{toc}{section}{Appendix} % Remove this if you don't want the appendix included in the table of contents.
+\appendix
+\section{Code Quality Examples}
+\subsection{Example 1 - Added convenience function to module}
+
+\begin{minted}[xleftmargin=\parindent,linenos]{C}
+void printNameAndAddress(int i){
+    sem_wait(personSem);
+    printName(i);
+    printAddress(i);
+    sem_signal(personSem);
+}
+\end{minted}
+By combining module functions, the interface is no longer minimal. Continuing this trend will lead to code duplication in the module. We also get dependencies between functions in the module which increases complexity. This type of \textit{convenience} function can be justified if the convenience is great enough though!
+
+\subsection{Example 2 - A module interface}
+\begin{minted}[xleftmargin=\parindent,linenos]{C}
+#ifndef PERSON_H
+#define PERSON_H
+
+typedef struct {
+	char * firstName;
+	char * lastName;
+	char * street;
+	int streetNumber;
+} TPerson;
+
+void reallocateArray(int newSize);
+TPerson ** getArray();
+void printName(int personNumber);
+void printAddress(int personNumber);
+void printNameAndAddress(int personNumber);
+...
+#endif
+\end{minted}
+\begin{itemize}
+\item In line 12 encapsulation is broken by returning a module specific type.
+\item In line 12 also, returning the array double pointer is really bad both from a encapsulation standpoint.
+\item The function \texttt{reallocateArray()} should not be part of the interface, it too breaks encapsulation.
+\end{itemize}
+
+\subsection{Example 3 - A module interface (module named "Cost")}
+\begin{minted}[xleftmargin=\parindent,linenos]{C}
+#ifndef lift_cost_h
+#define lift_cost_h
+
+int calculateCost(int currentFloor, int direction, int orderedFloor, int orderedDirection);
+
+int downCost[MAX_ELEVATORS][N_FLOORS];
+int upCost[MAX_ELEVATORS][N_FLOORS];
+
+void fillCostArrays();
+void clearCosts(void);
+int lowestCostFloor(int elevator);
+int lowestCostDirection(int elevator);
+int findBestElevator(int floor, int direction);
+void designateElevators();
+void clearDesignatedElevator();
+
+int designatedElevator[N_FLOORS][2];
+
+#endif
+\end{minted}
+\begin{itemize}
+\item The main issue with this module "interface" is that it is not in fact an interface at all!
+\item It is not evident from the interface what the responsibility of the module is.
+\item It is likely that there are non-obvious dependencies between functions in the interface
+\item Interface is not minimal, functions in line 4, 13, 11, 12 are overlapping. 
+\item The abstraction is not consistent. The name indicates that the module calculates and manages cost but at the same time it manipulates cost arrays, finds best elevator and designates elevators too? This abstraction has low cohesion, it is not consistent.
+\item The data members are not encapsulated.
+\end{itemize}
+
+\newpage
+\section{Message-based Resource Managers}
+\subsection{Go example}
+\begin{minted}{go}
+func resourceManager(clients chan message, transactionManager chan message)
+myTmChannel = make(message);
+for {
+	select {
+		case message <- clients :
+			switch message.request
+		case "dowork1":
+			transactionManager <- myId, "joinTransaction", tid, myTmChannel;
+			// store recoverypoint (if not maintaining log)
+			// Do work of type 1 using requestData, keep track of errorstatus
+			replyChannel <- result;
+		case "dowork2":
+			// ...
+		case message <- myTmChannel
+			switch message.request
+				case "prepareToCommit":
+					transactionManager <- transactions[tid].errorStatus;
+				case "commit":
+					// Delete recoverypoint, unlock any locks, delete transaction item from mapping
+				case "abort"
+					// reset to recoverypoint, unlock any locks. delete transaction item from mapping
+	}
+}
+\end{minted}
+
+\section{Basic Synchronization Patterns Pseudocode}
+In this appendix, I will with examples summarize some basic synchronization patterns that can be made with semaphores.
+\subsection{Rendezvous}
+\begin{figure}[H]
+\begin{verbatim}
+Two semaphores initialized to zero:
+aArrived = Semaphore(0)
+bArrived = Semaphore(0)
+
+\end{verbatim}
+\begin{minipage}{0.5\textwidth}
+\centering
+\begin{verbatim}
+Thread 1:
+statement a1
+aArrived.signal()
+bArrived.wait()
+statement a2
+\end{verbatim}
+\end{minipage}
+\begin{minipage}{0.5\textwidth}
+\centering
+\begin{verbatim}
+Thread 2:
+statement b1
+bArrived.signal()
+aArrived.wait()
+statement b2
+\end{verbatim}
+\end{minipage}
+\end{figure}
+
+\subsection{Barrier}
+\begin{figure}[H]
+\begin{verbatim}
+    n = #threads
+    count = 0
+    mutex = Semaphore(1)
+    barrier = Semaphore(0)
+    
+\end{verbatim}
+\text{Thread $T_i:$}
+\begin{verbatim}
+    mutex.wait()
+    count++
+    mutex.signal()
+
+    if count == n:
+        barrier.signal()
+    
+    barrier.wait()
+    barrier.signal()
+\end{verbatim}
+\end{figure}
+
+\subsection{Reuseable barriers}
+\begin{verbatim}
+    n = # threads
+    count = 0
+    mutex = Semaphore(1)
+    turnstile = Semaphore(0)
+    turnstile2 = Semaphore(1)
+    
+Thread T_i:
+    mutex.wait()
+    count++
+    if count == n:
+        turnstile2.wait()   #Lock turnstile 2
+        turnstile.signal()  #Unlock turnstile 1
+    mutex.signal()
+    
+    turnstile.wait()
+    turnstile.signal()
+    
+    #critical point
+    
+    mutex.wait()
+    count--
+    if count == 0:
+        turnstile.wait()    #Lock turnstile 1
+        turnstile2.signal() #Unlock turnstile 2
+    mutex.signal()
+    
+    turnstile2.wait()
+    turnstile2.signal()
+\end{verbatim}
+
+\newpage
+\subsection{Queues}
+The ballerina problem is described in Little Book of Semaphores. See if you understand what the problem solves by looking at this code!
+\begin{verbatim}
+    leaderQueue = Semaphore(0)
+    followerQueue = Semaphore(0)
+    
+\end{verbatim}
+\begin{figure}[H]
+    \begin{minipage}{0.5\textwidth}
+    \centering
+    \begin{verbatim}
+    Leader thread i:
+        followerQueue.Signal()
+        leaderQueue.wait()
+        dance()
+    \end{verbatim}
+    \end{minipage}
+     \begin{minipage}{0.5\textwidth}
+    \centering
+    \begin{verbatim}
+    Follower thread j:
+        leaderQueue.Signal()
+        followerQueue.wait()
+        dance()
+    \end{verbatim}
+    \end{minipage}
+\end{figure}
+
+This is just rendezvous! Take note that this queue does not guarantee that only one leader and follower dances at a time or that the leader and the follower are the same pair that got each other out of the queue. We will fix this next with exclusive queues.
+
+\newpage
+\subsection{Exclusive queues}
+Exclusive queues for the ballerinas problem. Here we are guaranteed that if a leader allows for a follower to enter the stage, that pair will dance together and complete together before another pair can take the stage. Similarly, if a follower allows for a waiting leader to enter the stage, that pair will dance together and complete together before another pair can take the stage.
+\begin{verbatim}
+    leaders = followers = 0
+    mutex = Semaphore(1)
+    leaderQueue = Semaphore(0)
+    followerQueue = Semaphore(0)
+    rendezvous = Semaphore(0)
+\end{verbatim}
+\begin{figure}[H]
+    \begin{minipage}{0.5\textwidth}
+    \centering
+    \begin{verbatim}
+    Leader thread i:
+    mutex.wait()
+    if followers > 0:
+        followers--
+        followerQueue.signal()
+    else:
+        leaders++
+        mutex.signal()
+        leaderQueue.wait()
+    dance()
+    rendezvous.wait()
+    mutex.signal()
+    \end{verbatim}
+    \end{minipage}
+    \begin{minipage}{0.5\textwidth}
+    \centering
+    \begin{verbatim}
+    Follower thread j:
+    mutex.wait()
+    if leaders>0:
+        leaders--
+        leaderQueue.signal()
+    else:
+        followers++
+        mutex.signal()
+        followerQueue.wait()
+    dance()
+    rendezvous.signal()
+    \end{verbatim}
+    \end{minipage}
+\end{figure}
+
+\newpage
+\subsection{FIFO Queues}
+In this part I will make a class $Fifo$ where using $fifo.wait()$ and $fifo.signal()$ will follow the First-In-First-Out principle. That is, if we have two threads T1 and T2 and T1 calls fifo.wait() before T2, fifo.signal() called from another thread will be guaranteed to release T1 before releasing T2. We will assume we have a Queue object with add() and remove() functionality in FIFO fashion, and that each thread has its own semaphore. We will not assume that add() and remove() are mutually exclusive functions however!
+\begin{verbatim}
+    class Fifo:
+    def __init__(self):
+        self.queue = Queue()
+        self.mutex = Semaphore(1)
+    
+    def wait(mySem):
+        self.mutex.wait()
+        self.queue.add(mySem)
+        self.mutex.signal()
+        mySem.wait()
+        
+    def signal(mySem):
+        self.mutex.wait()
+        self.queue.remove().signal()
+        self.mutex.signal()
+\end{verbatim}
